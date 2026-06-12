@@ -1,3 +1,5 @@
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4ad2dff4-cf4d-4981-a6bc-e0fa516eed25" />
+
 # Divine Life Memorial Park - Cemetery Management System
 
 A full-stack web application for lot management, interactive cemetery mapping, ownership records, and payment processing for Divine Life Memorial Park, Cabuyao, Laguna.
