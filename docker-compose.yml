@@ -1,11 +1,12 @@
-version: "3.9"
-
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
     container_name: cemetery_app
     ports:
-      - "8080:80"
+      - "8082:80"
     environment:
       DB_HOST: db
       DB_USERNAME: root
@@ -13,7 +14,9 @@ services:
       DB_NAME: cemetery_management
       DB_PORT: 3306
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: mysql:8.0
@@ -26,7 +29,16 @@ services:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - type: bind
+        source: ./Cemetery Management System Database.sql
+        target: /docker-entrypoint-initdb.d/01-init.sql
+        read_only: true
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
 volumes:
   db_data:
-

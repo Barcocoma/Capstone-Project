@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "@/configs/api";
 import { useAuth } from "@/context/AuthContext";
 import { useMaterialTailwindController } from "@/context";
+import { loadGoogleMapsScript } from "@/utils/loadGoogleMaps";
 
 // Divine Life Memorial Park center and bounds
 const CEMETERY_CENTER = { lat: 14.25978388400147, lng: 121.16392465423067 };
@@ -192,56 +193,18 @@ export default function GoogleMapView() {
         // labels rendered via overlay below
       }
     };
-    if (window.google && window.google.maps) {
-      init();
-    } else {
-      setStatus("not_loaded");
-      // Poll briefly in case the script is still downloading
-      const id = setInterval(() => {
-        if (window.google && window.google.maps) {
-          clearInterval(id);
-          clearTimeout(fallbackTimer);
-          init();
-        }
-      }, 100);
+    let cancelled = false;
+    loadGoogleMapsScript()
+      .then(() => {
+        if (!cancelled) init();
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("not_loaded");
+      });
 
-      // Fallback loader: if SDK still not present after a short delay,
-      // inject an additional script from the official Google domain using
-      // the same API key (if found in existing script tags). This does not
-      // remove or modify existing scripts.
-      const fallbackTimer = setTimeout(() => {
-        if (window.google && window.google.maps) return;
-        try {
-          const scripts = Array.from(document.querySelectorAll('script[src]'));
-          const existing = scripts.find(s => /maps\.*api\/js/i.test(s.src));
-          let key = "";
-          if (existing) {
-            try {
-              const u = new URL(existing.src, window.location.origin);
-              key = u.searchParams.get("key") || "";
-            } catch (_) {}
-          }
-          const src = `https://maps.googleapis.com/maps/api/js?${key ? `key=${key}&` : ""}libraries=geometry,places`;
-          const s = document.createElement('script');
-          s.src = src;
-          s.async = true;
-          s.defer = true;
-          s.onload = () => {
-            setStatus("loaded");
-            init();
-          };
-          s.onerror = () => setStatus("not_loaded");
-          document.head.appendChild(s);
-        } catch (_) {
-          // ignore
-        }
-      }, 2000);
-
-      return () => {
-        clearInterval(id);
-        clearTimeout(fallbackTimer);
-      };
-    }
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

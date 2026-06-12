@@ -158,5 +158,4 @@ function is_valid_email($value) {
     }
     return (bool)preg_match('/^[^@\s]+@[^@\s]+\.com$/i', $value);
 }
-?>
 

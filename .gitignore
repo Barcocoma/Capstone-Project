@@ -15,6 +15,7 @@ vendor
 dist
 dist-ssr
 *.local
+.env
 *.zip
 ManagementSystem.zip
 

@@ -84,7 +84,7 @@ CREATE TABLE customers (
     notes TEXT,
     
     -- Account Information
-    registration_date DATE DEFAULT CURRENT_DATE,
+    registration_date DATE DEFAULT (CURDATE()),
     last_payment_date DATE,
     
     deleted_at TIMESTAMP NULL,

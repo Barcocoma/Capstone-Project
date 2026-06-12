@@ -5,6 +5,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useMaterialTailwindController } from "@/context";
 import { API_ENDPOINTS } from "@/configs/api";
+import { loadGoogleMapsScript } from "@/utils/loadGoogleMaps";
 
 const STATUS_COLORS = {
   available: "#4CAF50",
@@ -23,6 +24,27 @@ const SELECTED_LOT_COLORS = {
   stroke: "#FFFFFF"
 };
 
+const HOVER_LOT_COLORS = {
+  stroke: "#000000",
+};
+
+const pointInPolygon = (pt, poly) => {
+  let inside = false;
+  const px = pt[0];
+  const py = pt[1];
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0];
+    const yi = poly[i][1];
+    const xj = poly[j][0];
+    const yj = poly[j][1];
+    const intersect =
+      yi > py !== yj > py &&
+      px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+};
+
 const CEMETERY_BOUNDS = { north: 14.2610, south: 14.2585, east: 121.1655, west: 121.1603 };
 
 export default function SectorDetailPage() {
@@ -35,6 +57,7 @@ export default function SectorDetailPage() {
   const map = useRef(null);
   const overlayViewRef = useRef(null);
   const overlayDomRef = useRef({ container: null, canvas: null, lotPolygons: [] });
+  const hoveredLotRef = useRef(null);
   const overlayImageRef = useRef(null);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [sectorCoords, setSectorCoords] = useState(null);
@@ -189,54 +212,18 @@ export default function SectorDetailPage() {
       }
     };
     
-    // Check if Google Maps is already loaded
-    if (window.google && window.google.maps) {
-      init();
-    } else {
-      // Try to load Google Maps API with fallback
-      const loadGoogleMaps = () => {
-        const script = document.createElement('script');
-        script.src = 'https://maps.gomaps.pro/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry,places';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          console.log('Google Maps API loaded successfully');
-          init();
-        };
-        script.onerror = () => {
-          console.error('Failed to load Google Maps API');
-          // Fallback: try official Google Maps API
-          const fallbackScript = document.createElement('script');
-          fallbackScript.src = 'https://maps.googleapis.com/maps/api/js?libraries=geometry,places';
-          fallbackScript.async = true;
-          fallbackScript.defer = true;
-          fallbackScript.onload = () => {
-            console.log('Fallback Google Maps API loaded');
-            init();
-          };
-          fallbackScript.onerror = () => {
-            console.error('Both Google Maps API sources failed');
-          };
-          document.head.appendChild(fallbackScript);
-        };
-        document.head.appendChild(script);
-      };
-      
-      // Check if script is already being loaded
-      const existingScript = document.querySelector('script[src*="maps.api"]');
-      if (!existingScript) {
-        loadGoogleMaps();
-      } else {
-        // Wait for existing script to load
-        const id = setInterval(() => {
-          if (window.google && window.google.maps) {
-            clearInterval(id);
-            init();
-          }
-        }, 100);
-        return () => clearInterval(id);
-      }
-    }
+    let cancelled = false;
+    loadGoogleMapsScript()
+      .then(() => {
+        if (!cancelled) init();
+      })
+      .catch((err) => {
+        console.error("Failed to load Google Maps API", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Keep a portal target that follows fullscreen changes
@@ -580,6 +567,9 @@ export default function SectorDetailPage() {
           const isSelected = selectedLot && 
             selectedLot.blockNumber === lot.blockNumber && 
             selectedLot.lotNumber === lot.lotNumber;
+          const isHovered = hoveredLotRef.current &&
+            hoveredLotRef.current.blockNumber === lot.blockNumber &&
+            hoveredLotRef.current.lotNumber === lot.lotNumber;
           
           if (isSelected) {
             // Selected: use dedicated highlight colors to make it stand out clearly
@@ -587,6 +577,12 @@ export default function SectorDetailPage() {
             ctx.fill();
             ctx.strokeStyle = SELECTED_LOT_COLORS.stroke;
             ctx.lineWidth = 4;
+            ctx.stroke();
+          } else if (isHovered) {
+            ctx.fillStyle = `${fillColor}B3`;
+            ctx.fill();
+            ctx.strokeStyle = HOVER_LOT_COLORS.stroke;
+            ctx.lineWidth = 3;
             ctx.stroke();
           } else {
             // Normal drawing: fill uses fillColor, stroke uses strokeColor
@@ -606,14 +602,41 @@ export default function SectorDetailPage() {
       const canvas = overlayDomRef.current.canvas; if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const x = ev.clientX - rect.left; const y = ev.clientY - rect.top;
-      const pointInPolygon = (pt, poly) => {
-        let inside = false; let xi, yi, xj, yj; const px = pt[0], py = pt[1];
-        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { xi = poly[i][0]; yi = poly[i][1]; xj = poly[j][0]; yj = poly[j][1]; const intersect = (yi > py) !== (yj > py) && (px < ((xj - xi) * (py - yi)) / (yj - yi) + xi); if (intersect) inside = !inside; }
-        return inside;
-      };
       const regions = overlayDomRef.current.clickableRegions || [];
       const hit = regions.find((lp) => pointInPolygon([x, y], lp.poly));
       if (hit) setSelectedLot(hit.lot);
+    };
+
+    const handleMouseMove = (ev) => {
+      const canvas = overlayDomRef.current.canvas;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+      const regions = overlayDomRef.current.clickableRegions || [];
+      const hit = regions.find((lp) => pointInPolygon([x, y], lp.poly));
+      const nextLot = hit?.lot || null;
+      const prevLot = hoveredLotRef.current;
+      const sameLot =
+        prevLot &&
+        nextLot &&
+        prevLot.blockNumber === nextLot.blockNumber &&
+        prevLot.lotNumber === nextLot.lotNumber;
+
+      canvas.style.cursor = hit ? "pointer" : "default";
+
+      if (sameLot || (!prevLot && !nextLot)) return;
+
+      hoveredLotRef.current = nextLot;
+      overlayView.draw();
+    };
+
+    const handleMouseLeave = () => {
+      const canvas = overlayDomRef.current.canvas;
+      if (!canvas || !hoveredLotRef.current) return;
+      hoveredLotRef.current = null;
+      canvas.style.cursor = "default";
+      overlayView.draw();
     };
 
     overlayView.draw = () => draw();
@@ -632,15 +655,32 @@ export default function SectorDetailPage() {
     // Click handler: ensure single click works
     const attachClick = () => {
       const canvas = overlayDomRef.current.canvas; if (!canvas) return;
-      const handler = (ev) => { ev.preventDefault(); ev.stopPropagation(); handleClick(ev); };
-      canvas.addEventListener('click', handler, { passive: false });
-      overlayDomRef.current._clickHandler = handler;
+      const clickHandler = (ev) => { ev.preventDefault(); ev.stopPropagation(); handleClick(ev); };
+      const moveHandler = (ev) => { ev.stopPropagation(); handleMouseMove(ev); };
+      const leaveHandler = () => handleMouseLeave();
+      canvas.addEventListener('click', clickHandler, { passive: false });
+      canvas.addEventListener('mousemove', moveHandler, { passive: true });
+      canvas.addEventListener('mouseleave', leaveHandler, { passive: true });
+      overlayDomRef.current._clickHandler = clickHandler;
+      overlayDomRef.current._moveHandler = moveHandler;
+      overlayDomRef.current._leaveHandler = leaveHandler;
     };
     setTimeout(attachClick, 50);
 
     return () => {
       if (overlayViewRef.current) overlayViewRef.current.setMap(null);
-      if (overlayDomRef.current.canvas && overlayDomRef.current._clickHandler) overlayDomRef.current.canvas.removeEventListener('click', overlayDomRef.current._clickHandler);
+      if (overlayDomRef.current.canvas) {
+        if (overlayDomRef.current._clickHandler) {
+          overlayDomRef.current.canvas.removeEventListener('click', overlayDomRef.current._clickHandler);
+        }
+        if (overlayDomRef.current._moveHandler) {
+          overlayDomRef.current.canvas.removeEventListener('mousemove', overlayDomRef.current._moveHandler);
+        }
+        if (overlayDomRef.current._leaveHandler) {
+          overlayDomRef.current.canvas.removeEventListener('mouseleave', overlayDomRef.current._leaveHandler);
+        }
+      }
+      hoveredLotRef.current = null;
         window.google?.maps?.event?.removeListener(listener);
       };
     }, [sectorCoords, naturalSize, lots, statusFilter, isCustomer, user, selectedLot]);

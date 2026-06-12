@@ -1,9 +1,12 @@
 node_modules
+vendor
 dist
 npm-debug.log
-Dockerfile
-docker-compose.yml
 .git
 .gitignore
 .cursor
+*.zip
+ManagementSystem.zip
+.env
+.env.local
 
