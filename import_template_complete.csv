@@ -1,0 +1,5 @@
+first_name,last_name,middle_name,email,contact_number,gender,lot_owned,street_address,city,province,postal_code,emergency_contact_name,emergency_contact_phone,occupation,deceased_name,deceased_date_of_death,deceased_burial_date
+Juan,Dela Cruz,Santos,juan@email.com,09171234567,Male,FA2-1,123 Main St,Manila,Metro Manila,1000,Pedro Dela Cruz,09181111111,Engineer,Maria Dela Cruz,2024-01-15,2024-01-20
+Maria,Reyes,,maria@email.com,09281234567,Female,HB3-5,456 Oak Ave,Quezon City,Metro Manila,1100,Jose Reyes,09282222222,Teacher,,
+Paulo,Fernandez,,paulo@email.com,09391234567,Male,,789 Pine Rd,Makati,Metro Manila,1200,Ana Fernandez,09383333333,Doctor,,
+

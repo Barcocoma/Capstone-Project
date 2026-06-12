@@ -1,0 +1,45 @@
+========================================
+QUICK FIX: Enable PHP Zip Extension
+========================================
+
+PROBLEM:
+Excel import requires PHP zip extension, but it's currently disabled.
+
+SOLUTION (3 Steps):
+
+STEP 1: Edit php.ini
+-------------------
+1. Open XAMPP Control Panel
+2. Click "Config" button next to Apache
+3. Click "PHP (php.ini)"
+   OR manually open: C:\xampp\php\php.ini
+
+STEP 2: Enable zip extension
+----------------------------
+1. Press Ctrl+F to search
+2. Type: extension=zip
+3. Find the line: ;extension=zip
+4. Remove the semicolon (;) at the beginning
+5. Change to: extension=zip
+6. Save file (Ctrl+S)
+
+STEP 3: Restart Apache
+----------------------
+1. In XAMPP Control Panel
+2. Click "Stop" for Apache
+3. Wait 3 seconds
+4. Click "Start" for Apache
+
+VERIFY IT WORKED:
+-----------------
+Option 1: Run in browser:
+   http://localhost/ManagementSystem/check_php_extensions.php
+
+Option 2: Run in terminal:
+   php -m | findstr zip
+   (Should show "zip" in output)
+
+========================================
+That's it! Try importing Excel files again.
+========================================
+

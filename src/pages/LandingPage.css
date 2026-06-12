@@ -1,0 +1,108 @@
+.hero-slide {
+  opacity: 0;
+  animation: heroFadeIn 2000ms ease-in-out forwards;
+}
+
+.hero-slide--hidden {
+  opacity: 0;
+  animation: none;
+}
+
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 2000ms ease-in-out;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+}
+
+.hero-bg.is-active {
+  opacity: 1;
+}
+
+.hero-bg-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 24px;
+  line-height: 1;
+  backdrop-filter: blur(4px);
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+  border: none;
+  cursor: pointer;
+}
+
+.hero-arrow:hover {
+  background: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.hero-arrow--left {
+  left: 0;
+}
+
+.hero-arrow--right {
+  right: 0;
+}
+
+.hero-indicators {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  cursor: pointer;
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.hero-indicator.is-active {
+  background: rgba(255, 255, 255, 0.95);
+  transform: scale(1.4);
+}
+
+@media (max-width: 1024px) {
+  .hero-arrow {
+    display: none;
+  }
+}
+
+/* Fix white line on scroll - applied when LandingPage is mounted */
+body.landing-page-active,
+html.landing-page-active {
+  overflow-x: hidden !important;
+  width: 100%;
+  max-width: 100vw;
+}
+

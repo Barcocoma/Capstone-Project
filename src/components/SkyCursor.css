@@ -1,0 +1,68 @@
+.sky-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  transition: opacity 200ms ease-out;
+}
+
+.sky-cursor--inner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: transparent;
+  transition: transform 220ms ease-out, border-color 220ms ease-out,
+    box-shadow 220ms ease-out;
+  box-shadow: 0 0 0 rgba(110, 198, 255, 0.35);
+}
+
+.sky-cursor--outer {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(110, 198, 255, 0.12);
+  box-shadow: 0 0 40px rgba(110, 198, 255, 0.35);
+  transition: transform 260ms ease-out, background 260ms ease-out,
+    box-shadow 260ms ease-out;
+}
+
+.sky-cursor--hover.sky-cursor--inner {
+  transform: translate(-50%, -50%) scale(1.25);
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 8px rgba(110, 198, 255, 0.45);
+}
+
+.sky-cursor--hover.sky-cursor--outer {
+  transform: translate(-50%, -50%) scale(1.1);
+  background: rgba(110, 198, 255, 0.22);
+  box-shadow: 0 0 55px rgba(110, 198, 255, 0.55);
+}
+
+.sky-cursor--hidden {
+  opacity: 0;
+}
+
+.custom-sky-cursor-active {
+  cursor: none !important;
+}
+
+.custom-sky-cursor-active * {
+  cursor: none !important;
+}
+
+.custom-sky-cursor-active input,
+.custom-sky-cursor-active textarea {
+  cursor: text !important;
+}
+
+@media (max-width: 1024px) {
+  .custom-sky-cursor-active,
+  .custom-sky-cursor-active * {
+    cursor: auto !important;
+  }
+}
+
+
